@@ -5,6 +5,7 @@ version = "0.0.1"
 
 [deps]
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 OMOPCDMCohortCreator = "f525a15e-a73f-4eef-870f-f901257eae22"
 
 [compat]

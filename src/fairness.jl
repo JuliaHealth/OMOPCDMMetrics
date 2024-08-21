@@ -1,9 +1,10 @@
 module Fairness
 
-    using DataFrames
-    using OMOPCDMCohortCreator
     import Base:
         Fix2
+
+    using DataFrames
+    using OMOPCDMCohortCreator
 
     include("./helpers.jl")
     include("./demographic_parity.jl")

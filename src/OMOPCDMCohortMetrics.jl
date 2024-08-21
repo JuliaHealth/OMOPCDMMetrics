@@ -3,6 +3,9 @@ module OMOPCDMCohortMetrics
 using DataFrames
 using OMOPCDMCohortCreator
 
+import DataStructures:
+    counter
+
 import Base.Iterators:
     product
 

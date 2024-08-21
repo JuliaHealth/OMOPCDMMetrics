@@ -84,15 +84,15 @@ function _overlapped_subjects(subjects; patient_overlaps = :default)
         required_overlapping_phenotypes = ceil(length(subjects.cohort_definition_id |> unique) / 2)
     end
 
-    subjects.count = [count(==(subject), subjects.subject_id) for subject in subjects.subject_id]
+    subjects_count = counter(subjects.subject_id);
 
-    intersecting_pop = filter(row -> row.count >= required_overlapping_phenotypes, subjects)
+    intersecting_pop = filter(x -> x[2] >= required_overlapping_phenotypes, subjects_count);
 
-    nonintersecting_pop = filter(row -> row.count < required_overlapping_phenotypes, subjects)
+    nonintersecting_pop = filter(row -> row[2] < required_overlapping_phenotypes, subjects_count);
 
-    intersecting_subjects = unique(intersecting_pop.subject_id)
-    nonintersecting_subjects = unique(nonintersecting_pop.subject_id)
-    total_subjects = vcat(intersecting_subjects, nonintersecting_subjects)
+    intersecting_subjects = keys(intersecting_pop) |> collect
+    nonintersecting_subjects = keys(nonintersecting_pop) |> collect
+    total_subjects = vcat(intersecting_subjects, nonintersecting_subjects) |> collect
 
     return total_subjects, intersecting_subjects, nonintersecting_subjects 
 
