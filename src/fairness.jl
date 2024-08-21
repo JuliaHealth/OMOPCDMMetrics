@@ -44,11 +44,13 @@ module Fairness
     function _subset_subjects(vec::Vector, subset_length::Int; full_subset::Bool = true)
         vec_length = size(vec)[1]
         subsets = []
-        for i in 1:process_size:size(vec)[1]
-            if i + process_size > size(vec)[1]
-                push!(subsets, vec[i:end])
+        for i in 1:subset_length:vec_length
+            if i + subset_length > vec_length
+                if full_subset == true
+                    push!(subsets, vec[i:end])
+                end
             else
-                push!(subsets, vec[i:i+process_size])
+                push!(subsets, vec[i:i+subset_length])
             end
         end
 
@@ -126,16 +128,16 @@ module Fairness
         labels = false, 
         silver = false, 
         reference_subjects = "", 
-        process_size = 10000
+        subset_length = 10000
     )
         if labels == true
             _demographic_parity(cohorts, funcs, conn,
             reference_subjects, 
-            process_size,
+            subset_length,
             silver)
         else
             _demographic_parity(cohorts, funcs, conn, reference_subjects, 
-            process_size)
+            subset_length)
         end
     end
 
@@ -153,7 +155,7 @@ module Fairness
 
         cohorts_df = GetCohortSubjects(cohorts, conn)
 
-        subsets = _subset_subjects(reference_subjects, process_size)
+        subsets = _subset_subjects(reference_subjects, subset_length)
 
         denom = DataFrame()
         for sub in subsets
@@ -166,7 +168,7 @@ module Fairness
         num = DataFrame()
         for cohort_idx in unique(cohorts_df.cohort_definition_id)
             subjects = filter(row -> row.cohort_definition_id == cohort_idx, cohorts_df).subject_id
-            subsets = _subset_subjects(subjects, process_size)
+            subsets = _subset_subjects(subjects, subset_length)
             for sub in subsets
                 vals = _counter_reducer(sub, :count_num, _funcs)
                 vals.cohort_definition_id .= cohort_idx
@@ -177,7 +179,7 @@ module Fairness
         if silver == true
             _, true_subjects, _ =  _overlapped_subjects(cohorts, conn)
 
-            subsets = _subset_subjects(true_subjects, process_size)
+            subsets = _subset_subjects(true_subjects, subset_length)
 
             silver = DataFrame()
             for sub in subsets
@@ -222,7 +224,7 @@ module Fairness
         cohorts_df = cohorts
         cohorts = cohorts.subject_id
 
-        subsets = _subset_subjects(reference_subjects, process_size)
+        subsets = _subset_subjects(reference_subjects, subset_length)
 
         denom = DataFrame()
         for (idx, sub) in enumerate(subsets)
@@ -237,7 +239,7 @@ module Fairness
         num = DataFrame()
         for cohort_idx in unique(cohorts_df.cohort_definition_id)
             subjects = filter(row -> row.cohort_definition_id == cohort_idx, cohorts_df).subject_id
-            subsets = _subset_subjects(subjects, process_size)
+            subsets = _subset_subjects(subjects, subset_length)
             for sub in subsets
                 vals = _counter_reducer(sub, :count_num, _funcs)
                 vals.cohort_definition_id .= cohort_idx
@@ -249,7 +251,7 @@ module Fairness
         if silver == true
             _, true_subjects, _ =  _overlapped_subjects(cohorts, conn)
 
-            subsets = _subset_subjects(true_subjects, process_size)
+            subsets = _subset_subjects(true_subjects, subset_length)
 
             silver = DataFrame()
             for sub in subsets
@@ -290,7 +292,7 @@ module Fairness
 
         cohorts = GetCohortSubjects(cohorts, conn).subject_id
 
-        subsets = _subset_subjects(reference_subjects, process_size)
+        subsets = _subset_subjects(reference_subjects, subset_length)
 
         denom = DataFrame()
         for sub in subsets
@@ -300,7 +302,7 @@ module Fairness
         denom = groupby(denom, names(denom)[1:end-1]) |> 
         x -> combine(x, :count_denom => sum => :count_denom)
 
-        subsets = _subset_subjects(cohorts, process_size)
+        subsets = _subset_subjects(cohorts, subset_length)
 
         num = DataFrame()
         for sub in subsets
@@ -337,7 +339,7 @@ module Fairness
 
         cohorts = cohorts.subject_id
 
-        subsets = _subset_subjects(reference_subjects, process_size)
+        subsets = _subset_subjects(reference_subjects, subset_length)
 
         denom = DataFrame()
         for (idx, sub) in enumerate(subsets)
@@ -348,7 +350,7 @@ module Fairness
         denom = groupby(denom, names(denom)[1:end-1]) |> 
         x -> combine(x, :count_denom => sum => :count_denom)
 
-        subsets = _subset_subjects(cohorts, process_size)
+        subsets = _subset_subjects(cohorts, subset_length)
 
         num = DataFrame()
         for (idx, sub) in enumerate(subsets)
@@ -378,7 +380,7 @@ module Fairness
 
         study_subjects, true_subjects, false_subjects =  _overlapped_subjects(cohorts, conn)
 
-        subsets = _subset_subjects(true_subjects, process_size)
+        subsets = _subset_subjects(true_subjects, subset_length)
 
         denom = DataFrame()
         for sub in subsets
@@ -394,7 +396,7 @@ module Fairness
             cohort = GetCohortSubjects(cohort_idx, conn)
             cohort = filter(row -> in(row.subject_id, true_subjects), cohort)
 
-            subsets = _subset_subjects(cohort.subject_id, process_size)
+            subsets = _subset_subjects(cohort.subject_id, subset_length)
 
             num = DataFrame()
             for sub in subsets
@@ -434,14 +436,14 @@ module Fairness
             true_cohort = filter(row -> in(row.subject_id, true_subjects), cohort)
             false_cohort = filter(row -> in(row.subject_id, false_subjects), cohort)
             
-            subsets = _subset_subjects(true_cohort.subject_id, process_size)
+            subsets = _subset_subjects(true_cohort.subject_id, subset_length)
 
             num = DataFrame()
             for sub in subsets
                 num = vcat(num, _counter_reducer(sub, :count_num, _funcs))
             end
             
-            subsets = _subset_subjects(false_cohort.subject_id, process_size)
+            subsets = _subset_subjects(false_cohort.subject_id, subset_length)
 
             if !isempty(subsets)
                 false_denom = DataFrame()
