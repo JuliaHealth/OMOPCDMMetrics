@@ -269,9 +269,10 @@ module Fairness
         num = groupby(num, Not(:count_num)) |> 
         x -> combine(x, :count_num => sum => :count_num)
 
-        dps = outerjoin(num, denom; on = names(num)[1:end-2] .|> 
-        x -> Symbol(x) => Symbol(x)) |>
-        x -> coalesce.(x, 0)
+        dps = leftjoin(num, denom; 
+            on = names(num)[1:end-2] .|> 
+            x -> Symbol(x) => Symbol(x)
+        )
 
         dps.demographic_parity = dps.count_num ./ dps.count_denom
 
