@@ -51,15 +51,13 @@ function _subset_subjects(vec::Vector, subset_length::Int; full_subset::Bool = t
 end
 
 """
-_overlapped_subjects(cohorts::Vector, conn; patient_overlaps::Symbol = :default)
+_overlapped_subjects(subjects::DataFrame; patient_overlaps::Symbol = :default)
 
-Internal function which accepts patient cohorts and determines total unique subjects between cohorts, which patients overlap between cohorts, and which patients do not overlap between cohorts.
+Internal function which accepts subjects and determines total unique subjects between cohorts, which patients overlap between cohorts, and which patients do not overlap between cohorts.
 
 # Arguments:
 
-- `cohorts::Vector` - a vector of cohort IDs
-
-- `conn` - database connection using DBInterface
+- `subjects::DataFrame` - a DataFrame of subjects (must contain a `subject_id` and a `cohort_definition_id` field).
 
 # Keyword Arguments:
 
@@ -80,13 +78,12 @@ A triple in the order, `total_subjects, intersecting_subjects, nonintersecting_s
 The `:default` algorithm to calculate patient overlaps via `patient_overlaps` is from _T. Y. Sun, S. Bhave, J. Altosaar, and N. Elhadad, “Assessing Phenotype Definitions for Algorithmic Fairness,” arXiv:2203.05174 [cs, q-bio], Mar. 2022, Accessed: Apr. 29, 2022. [Online]. Available: http://arxiv.org/abs/2203.05174_.
 
 """
-function _overlapped_subjects(cohorts, conn; patient_overlaps = :default)
+function _overlapped_subjects(subjects; patient_overlaps = :default)
 
     if patient_overlaps == :default
-        required_overlapping_phenotypes = ceil(length(cohorts) / 2)
+        required_overlapping_phenotypes = ceil(length(subjects.cohort_definition_id |> unique) / 2)
     end
 
-    subjects = GetCohortSubjects(cohorts, conn)
     subjects.count = [count(==(subject), subjects.subject_id) for subject in subjects.subject_id]
 
     intersecting_pop = filter(row -> row.count >= required_overlapping_phenotypes, subjects)

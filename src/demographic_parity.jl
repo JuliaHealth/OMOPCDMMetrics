@@ -139,7 +139,7 @@ function _demographic_parity(cohorts::DataFrame, funcs, conn, reference_subjects
 
     println("Skipping Silver Calculation")
     if silver == true
-        _, true_subjects, _ =  _overlapped_subjects(cohorts_df.cohort_definition_id |> unique, conn)
+        _, true_subjects, _ =  _overlapped_subjects(cohorts_df)
 
         subsets = _subset_subjects(true_subjects, subset_length)
 
