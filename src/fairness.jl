@@ -3,6 +3,9 @@ module Fairness
     import Base:
         Fix2
 
+    import DataStructures:
+        counter
+
     using DataFrames
     using OMOPCDMCohortCreator
 
