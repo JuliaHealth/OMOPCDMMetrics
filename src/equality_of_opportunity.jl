@@ -1,8 +1,8 @@
 """
-equality_of_opportunity(cohorts::DataFrame, funcs, conn; reference_subjects = "", subset_length = 10000)
+equality_of_opportunity(cohorts::DataFrame, funcs, conn; reference_subjects = "", subset_length = 1_000_000)
 
 """
-function equality_of_opportunity(cohorts::DataFrame, funcs, conn; reference_subjects = "", subset_length = 10000)
+function equality_of_opportunity(cohorts::DataFrame, funcs, conn; reference_subjects = "", subset_length = 1_000_000)
 
     _funcs = [Fix2(fun, conn) for fun in funcs]
 
@@ -18,7 +18,8 @@ function equality_of_opportunity(cohorts::DataFrame, funcs, conn; reference_subj
     subsets = _subset_subjects(true_subjects, subset_length)
 
     denom = DataFrame()
-    for sub in subsets
+    for (idx, sub) in enumerate(subsets)
+        println("Calculating Denom $idx")
         denom = vcat(denom, _counter_reducer(sub, :count_denom, _funcs))
     end
 
@@ -28,11 +29,14 @@ function equality_of_opportunity(cohorts::DataFrame, funcs, conn; reference_subj
     eoo = DataFrame()
     for cohort_idx in cohorts.cohort_definition_id |> unique
 
+        println("Working on $(cohort_idx)")
+
         cohort = filter(row -> row.cohort_definition_id == cohort_idx, cohorts)
         cohort = filter(row -> in(row.subject_id, true_subjects), cohort)
 
         subsets = _subset_subjects(cohort.subject_id, subset_length)
 
+        println("Calculating numerator")
         num = DataFrame()
         for sub in subsets
             num = vcat(num, _counter_reducer(sub, :count_num, _funcs))
