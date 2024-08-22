@@ -1,12 +1,19 @@
 """
-equality_of_opportunity(cohorts, funcs, conn; reference_subjects = "", subset_length = 10000)
+equality_of_opportunity(cohorts::DataFrame, funcs, conn; reference_subjects = "", subset_length = 10000)
 
 """
-function equality_of_opportunity(cohorts, funcs, conn; reference_subjects = "", subset_length = 10000)
+function equality_of_opportunity(cohorts::DataFrame, funcs, conn; reference_subjects = "", subset_length = 10000)
 
     _funcs = [Fix2(fun, conn) for fun in funcs]
 
-    study_subjects, true_subjects, false_subjects =  _overlapped_subjects(cohorts, conn)
+    if isempty(reference_subjects)
+        reference_subjects = GetDatabasePersonIDs(conn)
+    end
+
+    println("Getting ready to run")
+    println(_funcs[1](1))
+
+    study_subjects, true_subjects, false_subjects =  _overlapped_subjects(cohorts)
 
     subsets = _subset_subjects(true_subjects, subset_length)
 
@@ -19,9 +26,9 @@ function equality_of_opportunity(cohorts, funcs, conn; reference_subjects = "", 
     x -> combine(x, :count_denom => sum => :count_denom)
 
     eoo = DataFrame()
-    for cohort_idx in cohorts
+    for cohort_idx in cohorts.cohort_definition_id |> unique
 
-        cohort = GetCohortSubjects(cohort_idx, conn)
+        cohort = filter(row -> row.cohort_definition_id == cohort_idx, cohorts)
         cohort = filter(row -> in(row.subject_id, true_subjects), cohort)
 
         subsets = _subset_subjects(cohort.subject_id, subset_length)
@@ -34,9 +41,10 @@ function equality_of_opportunity(cohorts, funcs, conn; reference_subjects = "", 
         num = groupby(num, names(num)[1:end-1]) |> 
         x -> combine(x, :count_num => sum => :count_num)
 
-        cohort = outerjoin(num, denom; on = names(num)[1:end-1] .|> 
-        x -> Symbol(x) => Symbol(x)) |>
-        x -> coalesce.(x, 0)
+        cohort = leftjoin(num, denom; 
+            on = names(num)[1:end-1] .|> 
+            x -> Symbol(x) => Symbol(x)
+        )
 
         cohort.equality_of_opportunity = cohort.count_num ./ cohort.count_denom
 
